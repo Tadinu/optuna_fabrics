@@ -4,6 +4,7 @@ import optuna
 import joblib
 import csv
 import argparse
+from typing import Optional
 from optuna.visualization import plot_optimization_history, plot_param_importances
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +18,8 @@ logging.basicConfig(level=logging.INFO)
 optuna.logging.set_verbosity(optuna.logging.INFO)
 
 class FabricsStudy(object):
-    def __init__(self, trial: FabricsTrial):
+    def __init__(self, trial: FabricsTrial, render: bool = False):
+        self._study: Optional[optuna.Study] = None
         self.initialize_argument_parser()
         cli_arguments = self._parser.parse_args()
         self._trial = trial
@@ -27,7 +29,7 @@ class FabricsStudy(object):
         self._output_file=cli_arguments.output
         self._evaluate = cli_arguments.evaluate
         self._manual_tuning = cli_arguments.manual_tuning
-        self._render = cli_arguments.render
+        self._render = render if render else cli_arguments.render
         self._shuffle = cli_arguments.shuffle
         self._random_parameters = cli_arguments.random_parameters
         self._video_name = cli_arguments.video_name
@@ -69,7 +71,7 @@ class FabricsStudy(object):
         planner = self._trial.set_planner()
         logging.info(f"Running {self._number_trials} trials...")
         self._study.optimize(
-            lambda trial: self._trial.objective(trial, planner, env, q0, shuffle=self._shuffle),
+            lambda trial: self._trial.objective(trial, planner, env, q0, shuffle=self._shuffle, render=self._render),
             n_trials=self._number_trials,
         )
         self.print_parameters(self._study.best_params, "Best parameters")

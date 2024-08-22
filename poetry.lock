@@ -484,7 +484,7 @@ develop = false
 casadi = "^3.5.4,!=3.5.5.post1,!=3.5.5.post1"
 forwardkinematics = "^1.0"
 geomdl = "^5.3.1"
-mpscenes = "^0.1"
+mpscenes = "^0.4"
 numpy = "^1.15.3"
 pickle-mixin = "^1.0.2"
 pyquaternion = "^0.9.9"
@@ -625,13 +625,12 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "gym"
-version = "0.22.0"
-description = "Gym: A universal API for reinforcement learning environments."
-category = "main"
+version = "0.26.2"
+description = "Gym: A universal API for reinforcement learning environments"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.6"
 files = [
-    {file = "gym-0.22.0.tar.gz", hash = "sha256:339144c89951758187c378111919bc0e2f1695f9e9d9699e3f19279a6398148d"},
+    {file = "gym-0.26.2.tar.gz", hash = "sha256:e0d882f4b54f0c65f203104c24ab8a38b039f1289986803c7d02cdbe214fbcc4"},
 ]
 
 [package.dependencies]
@@ -655,7 +654,6 @@ toy-text = ["pygame (==2.1.0)", "scipy (>=1.4.1)"]
 name = "gym-notices"
 version = "0.0.8"
 description = "Notices for gym"
-category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -1268,14 +1266,13 @@ tests = ["pytest (>=4.6)"]
 
 [[package]]
 name = "mpscenes"
-version = "0.1.2"
+version = "0.4.6"
 description = "Generic motion planning scenes, including goals and obstacles."
-category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "mpscenes-0.1.2-py3-none-any.whl", hash = "sha256:e0dad26edbde6c503ae5ac96bb0341c4ce9141d7c9deb88a5c5a4c0bae5c53ee"},
-    {file = "mpscenes-0.1.2.tar.gz", hash = "sha256:57ae9ac01b8861cadab1111954e7af19c4bcceb44f8626d9895cf3f43525c1bd"},
+    {file = "mpscenes-0.4.6-py3-none-any.whl", hash = "sha256:e679712ec60c16c8a9b8a19c806fb684e0f331e4d2a85ec6db1d2e527901d220"},
+    {file = "mpscenes-0.4.6.tar.gz", hash = "sha256:4d2877edd271ec09703c199cde33e47f6a10e0b449bafe93ff06a7180c7bb9b4"},
 ]
 
 [package.dependencies]
@@ -1630,21 +1627,21 @@ files = [
 
 [[package]]
 name = "planarenvs"
-version = "1.2.1"
+version = "1.4.0"
 description = "Lightweight open-ai gym environments for planar kinematic chains."
-category = "main"
 optional = false
 python-versions = ">=3.8,<3.10"
 files = [
-    {file = "planarenvs-1.2.1-py3-none-any.whl", hash = "sha256:e200e88f2b70cd5ddf8b6f252bf92226f156d5fda2019dd249fe01fbf24357c1"},
-    {file = "planarenvs-1.2.1.tar.gz", hash = "sha256:d20eb28222a3497b59bc6a89fed4cadd5702714d860f6a3008a54a05d1410321"},
+    {file = "planarenvs-1.4.0-py3-none-any.whl", hash = "sha256:5127bc9f1be6437289096f84091c100ec7215cf6344a5ddf1f482fb637adf8c0"},
+    {file = "planarenvs-1.4.0.tar.gz", hash = "sha256:0a448598dc237b50ed9727c50d79417276f864de689395147e89e5eb0dac5210"},
 ]
 
 [package.dependencies]
 forwardkinematics = ">=1.0.3,<2.0.0"
-gym = ">=0.22,<0.23"
-mpscenes = ">=0.1,<0.2"
+gym = ">=0.26.0,<0.27.0"
+mpscenes = ">=0.4.4,<0.5.0"
 numpy = ">=1.19,<1.24"
+pygame = ">=2.1.2,<3.0.0"
 pyglet = ">=1.5.21,<2.0.0"
 pylint = ">=2.13.3,<3.0.0"
 scipy = ">=1.5,<2.0"
@@ -2459,20 +2456,18 @@ pyyaml = "*"
 
 [[package]]
 name = "urdfenvs"
-version = "0.5.1"
+version = "0.9.9"
 description = "Simple simulation environment for robots, based on the urdf files."
-category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "urdfenvs-0.5.1-py3-none-any.whl", hash = "sha256:632a348604f3d8950c36798455f11b30acf9de7b43bee38aa74ad75833ae4bad"},
-    {file = "urdfenvs-0.5.1.tar.gz", hash = "sha256:4ed5e6d4e34bd5d9337bd4cff2fdefe9d9582da7875173c8ddb993e444b14aeb"},
+    {file = "urdfenvs-0.9.9-py3-none-any.whl", hash = "sha256:71ab02f8de91ba23b3defc93cd3291e352a9b046212c5c940d513e8899dd0929"},
+    {file = "urdfenvs-0.9.9.tar.gz", hash = "sha256:fb18d248fd4285900b5bfca124c0c088c9ff8f61a1ec5eab86cfcb70c3ba47ac"},
 ]
 
 [package.dependencies]
 deprecation = ">=2.1.0,<3.0.0"
-gym = ">=0.22,<0.23"
-mpscenes = ">=0.1.2,<0.2.0"
+mpscenes = ">=0.4.4,<0.5.0"
 numpy = ">=1.19,<1.24"
 pybullet = ">=3.2.1,<4.0.0"
 yourdfpy = ">=0.0.52,<0.0.53"

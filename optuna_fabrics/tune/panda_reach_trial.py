@@ -149,7 +149,7 @@ class PandaReachTrial(PandaTrial):
         arguments = {}
         sub_goal_0_position = np.array(goal.subGoals()[0].position())
         arguments['x_goal_0'] = sub_goal_0_position
-        fk = self._generic_fk.fk(q0, goal.subGoals()[0].parentLink(), goal.subGoals()[0].childLink(), positionOnly=True)
+        fk = self._generic_fk.casadi(q0, goal.subGoals()[0].parentLink(), goal.subGoals()[0].childLink(), position_only=True)
         initial_distance_to_goal = np.linalg.norm(sub_goal_0_position - fk)
         return arguments, initial_distance_to_goal
 

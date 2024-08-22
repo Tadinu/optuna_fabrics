@@ -40,7 +40,7 @@ class PointTrial(FabricsTrial):
         q = ca.SX.sym("q", self._degrees_of_freedom)
         distance_to_obstacles = 10000
         for link in self._collision_links:
-            fk = self._fk.fk(q, link, positionOnly=True)
+            fk = self._fk.fk(q, link, position_only=True)
             for obst in obstacles:
                 obst_position = np.array(obst.position())
                 distance_to_obstacles = ca.fmin(distance_to_obstacles, ca.norm_2(obst_position - fk))

@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 from typing import Dict, Any
 import logging
 import optuna
@@ -8,11 +8,14 @@ import warnings
 from mpscenes.goals.goal_composition import GoalComposition
 from mpscenes.obstacles.sphere_obstacle import SphereObstacle
 
+
+import casadi as ca
 import numpy as np
 from optuna_fabrics.planner.symbolic_planner import SymbolicFabricPlanner
 from fabrics.planner.serialized_planner import SerializedFabricPlanner
 
 from forwardkinematics.urdfFks.generic_urdf_fk import GenericURDFFk
+from urdfenvs.generic_mujoco.generic_mujoco_env import GenericMujocoEnv
 
 from optuna_fabrics.tune.fabrics_trial import FabricsTrial
 import quaternionic
@@ -76,7 +79,7 @@ class RingTrial(FabricsTrial):
         return GoalComposition(name="goal", content_dict=goal_dict)
 
 
-    def shuffle_env(self, env, shuffle=True):
+    def shuffle_env(self, env, shuffle=True, render=False):
         # Definition of the goal.
         mean = [0.0, 0.707, 0.0, 0.0]
         if shuffle:
@@ -114,7 +117,6 @@ class RingTrial(FabricsTrial):
             }
         }
         goal = GoalComposition(name="goal", content_dict=goal_dict)
-        env.add_goal(goal)
         # Definition of the obstacle.
         radius_ring = 0.27
         obstacles = []
@@ -133,14 +135,13 @@ class RingTrial(FabricsTrial):
                 "geometry": {"position": position.tolist(), "radius": 0.08},
             }
             obstacles.append(SphereObstacle(name="staticObst", content_dict=static_obst_dict))
-        for obst in obstacles:
-            env.add_obstacle(obst)
+        env = GenericMujocoEnv(robots=self._robots, obstacles=[], goals=self._goal.sub_goals(), render=render)
         return env, obstacles, goal
 
     def evaluate_distance_to_goal(self, q: np.ndarray):
         sub_goal_0_position = np.array(self._goal.sub_goals()[0].position())
-        fk = self._generic_fk.fk(q, self._goal.sub_goals()[0].parent_link(), self._goal.sub_goals()[0].child_link(), positionOnly=True)
-        return np.linalg.norm(sub_goal_0_position - fk) / self._initial_distance_to_goal_0 
+        fk = self._generic_fk.casadi(q, self._goal.sub_goals()[0].parent_link(), self._goal.sub_goals()[0].child_link(), position_only=True)
+        return ca.norm_2(sub_goal_0_position - fk) / self._initial_distance_to_goal_0
 
 
     def set_goal_arguments(self, q0: np.ndarray, goal:GoalComposition, arguments):
@@ -149,12 +150,12 @@ class RingTrial(FabricsTrial):
         sub_goal_1_position = np.array(goal.sub_goals()[1].position())
         sub_goal_1_quaternion = quaternionic.array(goal.sub_goals()[1].angle())
         sub_goal_1_rotation_matrix = sub_goal_1_quaternion.to_rotation_matrix
-        fk_0 = self._generic_fk.fk(q0, goal.sub_goals()[0].parent_link(), goal.sub_goals()[0].child_link(), positionOnly=True)
-        self._initial_distance_to_goal_0 = np.linalg.norm(sub_goal_0_position - fk_0)
+        fk_0 = self._generic_fk.casadi(q0, goal.sub_goals()[0].parent_link(), goal.sub_goals()[0].child_link(), position_only=True)
+        self._initial_distance_to_goal_0 = ca.norm_2(sub_goal_0_position - fk_0)
         #self._initial_distance_to_goal_0 = 1.0
         arguments['x_goal_0'] = sub_goal_0_position
         arguments['x_goal_1'] = sub_goal_1_position
-        arguments['angle_goal_1'] = sub_goal_1_rotation_matrix
+        #arguments['angle_goal_1'] = sub_goal_1_rotation_matrix
         arguments['weight_goal_0']=np.array([1.0])
         arguments['weight_goal_1']=np.array([5.0])
         return self._initial_distance_to_goal_0

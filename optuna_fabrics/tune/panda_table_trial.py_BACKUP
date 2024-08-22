@@ -155,17 +155,17 @@ class PandaTableTrial(PandaTrial):
 
     def evaluate_distance_to_goal(self, q: np.ndarray):
         sub_goal_0_position = np.array(self._goal.subGoals()[0].position())
-        fk = self._generic_fk.fk(q, self._goal.subGoals()[0].parentLink(), self._goal.subGoals()[0].childLink(), positionOnly=True)
+        fk = self._generic_fk.casadi(q, self._goal.subGoals()[0].parentLink(), self._goal.subGoals()[0].childLink(), position_only=True)
         return np.linalg.norm(sub_goal_0_position - fk) / self._initial_distance_to_goal_1
 
     def set_goal_arguments(self, q0: np.ndarray, goal:GoalComposition):
         self._goal = goal
         arguments = {}
         sub_goal_0_position = np.array(goal.subGoals()[0].position())
-        fk_0 = self._generic_fk.fk(q0, goal.subGoals()[0].parentLink(), goal.subGoals()[0].childLink(), positionOnly=True)
+        fk_0 = self._generic_fk.casadi(q0, goal.subGoals()[0].parentLink(), goal.subGoals()[0].childLink(), position_only=True)
         self._initial_distance_to_goal_0 = np.linalg.norm(sub_goal_0_position - fk_0)
-        fk_1_0 = self._generic_fk.fk(q0, "panda_link0", goal.subGoals()[1].parentLink(), positionOnly=True)
-        fk_1_1 = self._generic_fk.fk(q0, "panda_link0", goal.subGoals()[1].childLink(), positionOnly=True)
+        fk_1_0 = self._generic_fk.casadi(q0, "panda_link0", goal.subGoals()[1].parentLink(), position_only=True)
+        fk_1_1 = self._generic_fk.casadi(q0, "panda_link0", goal.subGoals()[1].childLink(), position_only=True)
         self._initial_distance_to_goal_1 = np.linalg.norm(fk_1_0[0:2] - fk_1_1[0:2])
         sub_goal_1_position = np.array(goal.subGoals()[1].position())
         sub_goal_1_quaternion = quaternionic.array(goal.subGoals()[1].angle())

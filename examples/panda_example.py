@@ -7,6 +7,6 @@ if __name__ == "__main__":
     #panda_trial = PandaTableTrial(weights=weights_objective)
     panda_trial = PandaRingTrial(weights=weights_objective)
     #panda_trial = PandaReachTrial(weights=weights_objective)
-    study = FabricsStudy(panda_trial)
+    study = FabricsStudy(panda_trial, render=True)
     study.run()
     study.show_history()

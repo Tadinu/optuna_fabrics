@@ -9,3 +9,4 @@ optuna_fabrics.egg-info/
 tags
 *.pbz2
 *.pkl
+examples/xml_model

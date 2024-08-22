@@ -93,14 +93,14 @@ class PointAvoidanceTrial(FabricsTrial):
 
     def evaluate_distance_to_goal(self, q: np.ndarray):
         sub_goal_0_position = np.array(self._goal.subGoals()[0].position())
-        fk = self._fk.fk(q, self._goal.subGoals()[0].childLink(), positionOnly=True)
+        fk = self._fk.fk(q, self._goal.subGoals()[0].childLink(), position_only=True)
         return np.linalg.norm(sub_goal_0_position - fk) / self._initial_distance_to_goal_0 
 
 
     def set_goal_arguments(self, q0: np.ndarray, goal:GoalComposition, arguments):
         self._goal = goal
         sub_goal_0_position = np.array(goal.subGoals()[0].position())
-        fk_0 = self._fk.fk(q0, goal.subGoals()[0].childLink(), positionOnly=True)
+        fk_0 = self._fk.fk(q0, goal.subGoals()[0].childLink(), position_only=True)
         self._initial_distance_to_goal_0 = np.linalg.norm(sub_goal_0_position - fk_0)
         #self._initial_distance_to_goal_0 = 1.0
         arguments['x_goal_0'] = sub_goal_0_position

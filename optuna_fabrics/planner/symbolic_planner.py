@@ -1,3 +1,5 @@
+from forwardkinematics.fksCommon.fk import ForwardKinematics
+
 from fabrics.planner.parameterized_planner import ParameterizedFabricPlanner
 from casadi import SX
 
@@ -6,7 +8,7 @@ def symbolic(name, dim):
     return SX.sym(name, dim)
 
 class SymbolicFabricPlanner(ParameterizedFabricPlanner):
-    def __init__(self, dof: int, robot_type: str, **kwargs):
+    def __init__(self, dof: int, robot_type: str, forward_kinematics: ForwardKinematics, **kwargs):
         collision_geometry: str = (
             "-sym('k_geo') / (x ** sym('exp_geo')) * xdot ** 2"
         )
@@ -67,6 +69,6 @@ class SymbolicFabricPlanner(ParameterizedFabricPlanner):
         kwargs['limit_finsler'] = limit_finsler
         super().__init__(
             dof,
-            robot_type,
+            forward_kinematics,
             **kwargs,
         )

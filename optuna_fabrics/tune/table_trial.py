@@ -1,4 +1,4 @@
-import gym
+#import gym
 from typing import Dict, Any
 import logging
 import optuna
@@ -145,7 +145,7 @@ class TableTrial(FabricsTrial):
 
     def evaluate_distance_to_goal(self, q: np.ndarray):
         sub_goal_0_position = np.array(self._goal.sub_goals()[0].position())
-        fk = self._generic_fk.fk(q, self._goal.sub_goals()[0].parent_link(), self._goal.sub_goals()[0].child_link(), positionOnly=True)
+        fk = self._generic_fk.casadi(q, self._goal.sub_goals()[0].parent_link(), self._goal.sub_goals()[0].child_link(), position_only=True)
         return np.linalg.norm(sub_goal_0_position - fk) / self._initial_distance_to_goal_0 
 
 
@@ -155,7 +155,7 @@ class TableTrial(FabricsTrial):
         sub_goal_1_position = np.array(goal.sub_goals()[1].position())
         sub_goal_1_quaternion = quaternionic.array(goal.sub_goals()[1].angle())
         sub_goal_1_rotation_matrix = sub_goal_1_quaternion.to_rotation_matrix
-        fk_0 = self._generic_fk.fk(q0, goal.sub_goals()[0].parent_link(), goal.sub_goals()[0].child_link(), positionOnly=True)
+        fk_0 = self._generic_fk.casadi(q0, goal.sub_goals()[0].parent_link(), goal.sub_goals()[0].child_link(), position_only=True)
         self._initial_distance_to_goal_0 = np.linalg.norm(sub_goal_0_position - fk_0)
         #self._initial_distance_to_goal_0 = 1.0
         arguments['x_goal_0'] = sub_goal_0_position

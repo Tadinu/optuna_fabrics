@@ -1,8 +1,12 @@
 from abc import abstractmethod
-from typing import Dict, Any
+from time import perf_counter
+from typing import Dict, Any, Optional
+from urdfenvs.generic_mujoco.generic_mujoco_env import GenericMujocoEnv
+from forwardkinematics.urdfFks.generic_urdf_fk import GenericURDFFk
+from urdfenvs.urdf_common.generic_robot import GenericRobot
 from optuna_fabrics.planner.symbolic_planner import SymbolicFabricPlanner
 from mpscenes.goals.goal_composition import GoalComposition
-import gym
+import gymnasium as gym
 import logging
 import time
 import warnings
@@ -16,46 +20,57 @@ from urdfenvs.robots.generic_urdf import GenericUrdfReacher
 
 class FabricsTrial(object):
     def __init__(self, weights: dict = None) -> None:
-        self._weights = {"path_length": 0.4, "time_to_goal": 0.4, "obstacles": 0.2}
+        self._root_link: str = ""
+        self._q0 = []
+        self._self_collision_pairs: dict[str, list[str]] = {}
+        self._collision_metric: Optional[ca.Function] = None
+        self._degrees_of_freedom: int = 0
+        self._number_obstacles: int = 0
+        self._link_sizes: dict[str, list] = {}
+        self._collision_links: list[str] = []
+        self._generic_fk: Optional[GenericURDFFk] = None
+        self._weights = weights if weights else {"path_length": 0.4, "time_to_goal": 0.4, "obstacles": 0.2}
         self._maximum_seconds = 30
+        self._start_time = time.perf_counter()
         self._dt = 0.05
+        self._urdf_file: str = ""
+        self._search_space: dict = {}
+        self._robots: list[GenericRobot] = []
+        self._goal: Optional[GoalComposition] = None
         self.set_search_space()
-        if weights:
-            self._weights = weights
 
     def initialize_environment(self, render: bool=True):
         """
         Initializes the simulation environment.
         """
-        robots = [
+        self._robots = [
             GenericUrdfReacher(urdf=self._urdf_file, mode="acc"),
         ]
         env = gym.make(
             "urdf-env-v0",
-            dt=self._dt, robots=robots, render=render
+            dt=self._dt, robots=self._robots, render=render
         )
         return env
 
     def set_search_space(self) -> None:
-        self._search_space = {}
-        self._search_space['exp_geo_obst_leaf'] = {'low': 1, 'high': 5, 'int': True, 'log': False}
-        self._search_space['exp_geo_self_leaf'] = {'low': 1, 'high': 5, 'int': True, 'log': False}
-        self._search_space['exp_geo_limit_leaf'] = {'low': 1, 'high': 5, 'int': True, 'log': False}
-        self._search_space['exp_fin_obst_leaf'] = {'low': 1, 'high': 5, 'int': True, 'log': False}
-        self._search_space['exp_fin_self_leaf'] = {'low': 1, 'high': 5, 'int': True, 'log': False}
-        self._search_space['exp_fin_limit_leaf'] = {'low': 1, 'high': 5, 'int': True, 'log': False}
-        self._search_space['k_geo_obst_leaf'] = {'low': 0.01, 'high': 1, 'int': False, 'log': True}
-        self._search_space['k_geo_self_leaf'] = {'low': 0.01, 'high': 1, 'int': False, 'log': True}
-        self._search_space['k_geo_limit_leaf'] = {'low': 0.01, 'high': 1, 'int': False, 'log': True}
-        self._search_space['k_fin_obst_leaf'] = {'low': 0.01, 'high': 1, 'int': False, 'log': True}
-        self._search_space['k_fin_self_leaf'] = {'low': 0.01, 'high': 1, 'int': False, 'log': True}
-        self._search_space['k_fin_limit_leaf'] = {'low': 0.01, 'high': 1, 'int': False, 'log': True}
-        self._search_space['alpha_b_damper'] = {'low': 0.0, 'high': 1, 'int': False, 'log': False}
-        self._search_space['base_inertia'] = {'low': 0.01, 'high': 1.0, 'int': False, 'log': False}
-        self._search_space['beta_distant_damper'] = {'low': 0.0, 'high': 1.0, 'int': False, 'log': False}
-        self._search_space['beta_close_damper'] = {'low': 5.0, 'high': 20.0, 'int': False, 'log': False}
-        self._search_space['radius_shift_damper'] = {'low': 0.01, 'high': 0.1, 'int': False, 'log': False}
-        self._search_space['ex_factor'] = {'low': 1.0, 'high': 30.0, 'int': False, 'log': False}
+        self._search_space = {'exp_geo_obst_leaf': {'low': 1, 'high': 5, 'int': True, 'log': False},
+                              'exp_geo_self_leaf': {'low': 1, 'high': 5, 'int': True, 'log': False},
+                              'exp_geo_limit_leaf': {'low': 1, 'high': 5, 'int': True, 'log': False},
+                              'exp_fin_obst_leaf': {'low': 1, 'high': 5, 'int': True, 'log': False},
+                              'exp_fin_self_leaf': {'low': 1, 'high': 5, 'int': True, 'log': False},
+                              'exp_fin_limit_leaf': {'low': 1, 'high': 5, 'int': True, 'log': False},
+                              'k_geo_obst_leaf': {'low': 0.01, 'high': 1, 'int': False, 'log': True},
+                              'k_geo_self_leaf': {'low': 0.01, 'high': 1, 'int': False, 'log': True},
+                              'k_geo_limit_leaf': {'low': 0.01, 'high': 1, 'int': False, 'log': True},
+                              'k_fin_obst_leaf': {'low': 0.01, 'high': 1, 'int': False, 'log': True},
+                              'k_fin_self_leaf': {'low': 0.01, 'high': 1, 'int': False, 'log': True},
+                              'k_fin_limit_leaf': {'low': 0.01, 'high': 1, 'int': False, 'log': True},
+                              'alpha_b_damper': {'low': 0.0, 'high': 1, 'int': False, 'log': False},
+                              'base_inertia': {'low': 0.01, 'high': 1.0, 'int': False, 'log': False},
+                              'beta_distant_damper': {'low': 0.0, 'high': 1.0, 'int': False, 'log': False},
+                              'beta_close_damper': {'low': 5.0, 'high': 20.0, 'int': False, 'log': False},
+                              'radius_shift_damper': {'low': 0.01, 'high': 0.1, 'int': False, 'log': False},
+                              'ex_factor': {'low': 1.0, 'high': 30.0, 'int': False, 'log': False}}
 
     @abstractmethod
     def set_planner(self, render=True):
@@ -120,7 +135,6 @@ class FabricsTrial(object):
 
 
     def sample_fabrics_params_uniform(self, trial: optuna.trial.Trial) -> Dict[str, Any]:
-
         parameters = {}
         for name, space in self._search_space.items():
             if space['int']:
@@ -164,7 +178,7 @@ class FabricsTrial(object):
 
 
     @abstractmethod
-    def shuffle_env(self, env):
+    def shuffle_env(self, env, shuffle=True, render=False):
         pass
 
     @abstractmethod
@@ -173,10 +187,10 @@ class FabricsTrial(object):
 
     def extract_joint_states(self, ob: dict):
         if 'joint_state' in ob['robot_0']:
-            return ob['robot_0']['joint_state']['position'], ob['robot_0']['joint_state']['velocity']
+            joint_state = ob['robot_0']['joint_state']
+            return joint_state['position'], joint_state['velocity']
         else:
             return ob['x'], ob['xdot']
-
 
     def run(self, params, planner: SymbolicFabricPlanner, obstacles, ob, goal: GoalComposition, env):
         # Start the simulation
@@ -191,7 +205,9 @@ class FabricsTrial(object):
         distances_to_closest_obstacle = []
         path_length = 0.0
         x_old = q0
-        while env.t() < self._maximum_seconds:
+
+        t3 = time.perf_counter()
+        while (t3- self._start_time) < self._maximum_seconds:
             t0 = time.perf_counter()
             action = planner.compute_action(
                 q=self.extract_joint_states(ob)[0],
@@ -226,12 +242,14 @@ class FabricsTrial(object):
         q = ca.SX.sym("q", self._degrees_of_freedom)
         distance_to_obstacles = 10000
         for link in self._collision_links:
-            fk = self._generic_fk.fk(q, self._root_link, link, positionOnly=True)
+            fk = self._generic_fk.casadi(q, self._root_link, link, position_only=True)
             for obst in obstacles:
                 obst_position = np.array(obst.position())
                 distance_to_obstacles = ca.fmin(distance_to_obstacles, ca.norm_2(obst_position - fk))
         self._collision_metric = ca.Function("collision_metric", [q], [distance_to_obstacles])
 
+    def evaluate_distance_to_goal(self, q: np.ndarray):
+        pass
 
     def evaluate_distance_to_closest_obstacle(self, obstacles, q: np.ndarray):
         casadi_metric = self._collision_metric(q)
@@ -240,9 +258,9 @@ class FabricsTrial(object):
     def q0(self):
         return self._q0
 
-    def objective(self, trial, planner, env, q0, shuffle=True):
-        ob = env.reset(pos=q0)
-        env, obstacles, goal = self.shuffle_env(env,shuffle =shuffle)
+    def objective(self, trial, planner, env, q0, shuffle=True, render=False):
+        ob, _ = env.reset()
+        env, obstacles, goal = self.shuffle_env(env, shuffle=shuffle, render=render)
         self.create_collision_metric(obstacles)
         params = self.sample_fabrics_params_uniform(trial)
         return self.total_costs(self.run(params, planner, obstacles, ob, goal, env))
